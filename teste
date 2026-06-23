@@ -1,0 +1,222 @@
+-- Continuação do script (a partir do corte em StatusLabel.TextXAlignment)
+    StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+    StatusLabel.Parent = MainFrame
+
+    -- ============ ASHURA TOGGLES ============
+    local yOffset = 60
+    local function createToggle(name, default, callback)
+        local toggleFrame = Instance.new("Frame")
+        toggleFrame.Size = UDim2.new(1, -20, 0, 25)
+        toggleFrame.Position = UDim2.new(0, 10, 0, yOffset)
+        toggleFrame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        toggleFrame.BorderSizePixel = 0
+        toggleFrame.Parent = MainFrame
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(0.7, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.Text = name
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextSize = 12
+        label.Font = Enum.Font.Gotham
+        label.TextXAlignment = Enum.TextXAlignment.Left
+        label.Parent = toggleFrame
+
+        local button = Instance.new("TextButton")
+        button.Size = UDim2.new(0.3, 0, 1, 0)
+        button.Position = UDim2.new(0.7, 0, 0, 0)
+        button.BackgroundColor3 = default and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(170, 0, 0)
+        button.Text = default and "ON" or "OFF"
+        button.TextColor3 = Color3.fromRGB(255, 255, 255)
+        button.TextSize = 11
+        button.Font = Enum.Font.GothamBold
+        button.Parent = toggleFrame
+
+        button.MouseButton1Click:Connect(function()
+            local state = button.Text == "OFF"
+            button.Text = state and "ON" or "OFF"
+            button.BackgroundColor3 = state and Color3.fromRGB(0, 170, 100) or Color3.fromRGB(170, 0, 0)
+            callback(state)
+        end)
+
+        yOffset = yOffset + 28
+        return toggleFrame
+    end
+
+    local function createSlider(name, min, max, default, callback)
+        local frame = Instance.new("Frame")
+        frame.Size = UDim2.new(1, -20, 0, 40)
+        frame.Position = UDim2.new(0, 10, 0, yOffset)
+        frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+        frame.BorderSizePixel = 0
+        frame.Parent = MainFrame
+
+        local label = Instance.new("TextLabel")
+        label.Size = UDim2.new(1, 0, 0, 16)
+        label.BackgroundTransparency = 1
+        label.Text = name .. ": " .. default
+        label.TextColor3 = Color3.fromRGB(255, 255, 255)
+        label.TextSize = 11
+        label.Font = Enum.Font.Gotham
+        label.Parent = frame
+
+        local slider = Instance.new("TextBox")
+        slider.Size = UDim2.new(0.7, 0, 0, 20)
+        slider.Position = UDim2.new(0.15, 0, 0.5, 0)
+        slider.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        slider.Text = tostring(default)
+        slider.TextColor3 = Color3.fromRGB(255, 255, 255)
+        slider.TextSize = 11
+        slider.Font = Enum.Font.Gotham
+        slider.Parent = frame
+
+        local less = Instance.new("TextButton")
+        less.Size = UDim2.new(0.12, 0, 0, 20)
+        less.Position = UDim2.new(0, 0, 0.5, 0)
+        less.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+        less.Text = "-"
+        less.Font = Enum.Font.GothamBold
+        less.TextColor3 = Color3.fromRGB(255, 255, 255)
+        less.Parent = frame
+
+        local more = Instance.new("TextButton")
+        more.Size = UDim2.new(0.12, 0, 0, 20)
+        more.Position = UDim2.new(0.88, 0, 0.5, 0)
+        more.BackgroundColor3 = Color3.fromRGB(50, 200, 50)
+        more.Text = "+"
+        more.Font = Enum.Font.GothamBold
+        more.TextColor3 = Color3.fromRGB(255, 255, 255)
+        more.Parent = frame
+
+        local function updateValue(newVal)
+            newVal = math.clamp(tonumber(newVal) or min, min, max)
+            slider.Text = tostring(newVal)
+            label.Text = name .. ": " .. newVal
+            callback(newVal)
+        end
+
+        less.MouseButton1Click:Connect(function()
+            updateValue(tonumber(slider.Text) - (name:find("Speed") and 0.1 or 1))
+        end)
+
+        more.MouseButton1Click:Connect(function()
+            updateValue(tonumber(slider.Text) + (name:find("Speed") and 0.1 or 1))
+        end)
+
+        slider.FocusLost:Connect(function(enterPressed)
+            updateValue(tonumber(slider.Text))
+        end)
+
+        yOffset = yOffset + 43
+        return frame
+    end
+
+    -- Vinculação dos controles às configurações
+    createToggle("Ashura ON/OFF", Settings.Ashura.Enabled, function(state)
+        Settings.Ashura.Enabled = state
+        StatusLabel.Text = state and "Ashura: LIGADO" or "Ashura: DESLIGADO"
+        if state then
+            AshuraSystem:Start()
+        else
+            AshuraSystem:Stop()
+        end
+    end)
+
+    createSlider("Range", 10, 500, Settings.Ashura.Range, function(val)
+        Settings.Ashura.Range = val
+        if AshuraSystem.RangeCircle then
+            AshuraSystem.RangeCircle.Size = Vector3.new(val*2, 0.1, val*2)
+        end
+    end)
+
+    createToggle("AutoAim", Settings.Ashura.AutoAim, function(state)
+        Settings.Ashura.AutoAim = state
+    end)
+
+    createToggle("SilentAim", Settings.Ashura.SilentAim, function(state)
+        Settings.Ashura.SilentAim = state
+    end)
+
+    createToggle("AutoAttack", Settings.Ashura.AutoAttack, function(state)
+        Settings.Ashura.AutoAttack = state
+    end)
+
+    createSlider("AttackSpeed", 0.1, 3, Settings.Ashura.AttackSpeed, function(val)
+        Settings.Ashura.AttackSpeed = val
+    end)
+
+    createToggle("HitboxExpand", Settings.Ashura.HitboxExpand, function(state)
+        Settings.Ashura.HitboxExpand = state
+    end)
+
+    createSlider("HitboxSize", 5, 50, Settings.Ashura.HitboxSize, function(val)
+        Settings.Ashura.HitboxSize = val
+    end)
+
+    createSlider("FOV", 10, 180, Settings.Ashura.FOV, function(val)
+        Settings.Ashura.FOV = val
+    end)
+
+    createToggle("TeleportToTarget", Settings.Ashura.TeleportToTarget, function(state)
+        Settings.Ashura.TeleportToTarget = state
+    end)
+
+    createToggle("ShowRange", Settings.Ashura.ShowRange, function(state)
+        Settings.Ashura.ShowRange = state
+        if state then
+            if not AshuraSystem.RangeCircle and AshuraSystem.Enabled then
+                AshuraSystem:CreateRangeCircle()
+            end
+        else
+            if AshuraSystem.RangeCircle then
+                AshuraSystem.RangeCircle:Destroy()
+                AshuraSystem.RangeCircle = nil
+            end
+        end
+    end)
+
+    createToggle("SafeMode", Settings.Ashura.SafeMode, function(state)
+        Settings.Ashura.SafeMode = state
+    end)
+
+    -- Botão Copy Set
+    local copyBtn = Instance.new("TextButton")
+    copyBtn.Size = UDim2.new(1, -20, 0, 30)
+    copyBtn.Position = UDim2.new(0, 10, 0, yOffset + 5)
+    copyBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 0)
+    copyBtn.Text = "COPIAR SET DO ALVO"
+    copyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    copyBtn.TextSize = 13
+    copyBtn.Font = Enum.Font.GothamBold
+    copyBtn.Parent = MainFrame
+
+    copyBtn.MouseButton1Click:Connect(function()
+        local target = AshuraSystem:GetNearestTarget()
+        if target and target.Character then
+            local data = CopySetSystem.ScanCharacter(target.Character)
+            if data then
+                CopySetSystem.ApplySet(data)
+                StatusLabel.Text = "Set copiado!"
+                task.wait(2)
+                StatusLabel.Text = Settings.Ashura.Enabled and "Ashura: LIGADO" or "Ashura: DESLIGADO"
+            end
+        else
+            StatusLabel.Text = "Nenhum alvo encontrado!"
+            task.wait(2)
+            StatusLabel.Text = Settings.Ashura.Enabled and "Ashura: LIGADO" or "Ashura: DESLIGADO"
+        end
+    end)
+
+    yOffset = yOffset + 40
+    MainFrame.Size = UDim2.new(0, 200, 0, yOffset + 10)
+end
+
+-- ==================== INICIALIZAÇÃO ====================
+CreateGUI()
+AshuraSystem = AshuraSystem.new()
+
+if Settings.Ashura.Enabled then
+    AshuraSystem:Start()
+end
+
+print("========== THE CODEX V3.6 GUI CARREGADO ==========")
